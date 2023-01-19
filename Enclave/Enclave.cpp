@@ -536,9 +536,18 @@ public:
         table_locks[path[0].first][path[0].second].unlock();
         return true;
     }
+    // OptCuckoo(const OptCuckoo &cuckoo){
+        
+    // }
 };
 
-void ecall_put(){
-    auto cuckoo=new OptCuckoo(1000);
-    cuckoo->put("hello",10,1);
+OptCuckoo cuckoo(8000 * 1000);
+
+void ecall_init(){
+    // cuckoo=OptCuckoo(8000 * 1000);
+}
+
+void ecall_put(int n,int tid){
+    // std::string s="random"+to_string(n);
+    // cuckoo.put(s,n,tid);
 }

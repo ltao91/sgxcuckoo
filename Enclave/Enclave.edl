@@ -59,6 +59,7 @@ enclave {
         void ocall_print_string([in, string] const char *str);
     };
     trusted{
-        public void ecall_put();
+        public void ecall_put(int n,int tid);
+        public void ecall_init();
     };
 };
