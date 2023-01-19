@@ -192,40 +192,40 @@ int SGX_CDECL main(int argc, char *argv[])
     ecall_libcxx_functions();
     ecall_thread_functions();
     
-    // const int ops = 16000 * 1000;
+    const int ops = 16000*000;
+    ecall_init(global_eid);
+    for (int t_num = 1; t_num < 200; t_num *= 2)
+    {
+        double ms_sum = 0;
+        double ms_best = 1000000000;
+        for (int loop = 0; loop < 10; loop++)
+        {
+            std::cout << "start : " << loop << std::endl;
+            std::vector<std::thread> threads;
+            auto write = [](int tid, int t_num)
+            {
+                for (int i = tid; i < ops; i += t_num)
+                {
+                    ecall_put(global_eid,i,tid);
+                }
+            };
 
-    // for (int t_num = 1; t_num < 200; t_num *= 2)
-    // {
-    //     double ms_sum = 0;
-    //     double ms_best = 1000000000;
-    //     for (int loop = 0; loop < 10; loop++)
-    //     {
-    //         std::cout << "start : " << loop << std::endl;
-    //         std::vector<std::thread> threads;
-    //         auto write = [](int tid, int t_num)
-    //         {
-    //             for (int i = tid; i < ops; i += t_num)
-    //             {
-    //                 ecall_put(global_eid,i,tid);
-    //             }
-    //         };
-
-    //         auto s = get_now();
-    //         // for (int i = 0; i < t_num; i++)
-    //         // {
-    //         //     threads.emplace_back(write, i, t_num);
-    //         // }
-    //         // for (int i = 0; i < t_num ; i++)
-    //         // {
-    //         //     threads[i].join();
-    //         // }
-    //         auto e = get_now();
-    //         ms_sum += get_duration_ms(s, e) / 1000000;
-    //         ms_best = std::min(ms_best, get_duration_ms(s, e) / 1000000);
-    //     }
-    //     std::cout << ms_sum / 10 << std::endl;
-    //     std::cout << ms_best << std::endl;
-    // }
+            auto s = get_now();
+            for (int i = 0; i < t_num; i++)
+            {
+                threads.emplace_back(write, i, t_num);
+            }
+            for (int i = 0; i < t_num ; i++)
+            {
+                threads[i].join();
+            }
+            auto e = get_now();
+            ms_sum += get_duration_ms(s, e) / 1000000;
+            ms_best = std::min(ms_best, get_duration_ms(s, e) / 1000000);
+        }
+        std::cout << ms_sum / 10 << std::endl;
+        std::cout << ms_best << std::endl;
+    }
 
     /* Destroy the enclave */
     sgx_destroy_enclave(global_eid);

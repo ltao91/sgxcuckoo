@@ -47,13 +47,13 @@
 
 using namespace std;
 
-/* 
- * printf: 
+/*
+ * printf:
  *   Invokes OCALL to display the enclave buffer to the terminal.
  */
-int printf(const char* fmt, ...)
+int printf(const char *fmt, ...)
 {
-    char buf[BUFSIZ] = { '\0' };
+    char buf[BUFSIZ] = {'\0'};
     va_list ap;
     va_start(ap, fmt);
     vsnprintf(buf, BUFSIZ, fmt, ap);
@@ -62,11 +62,11 @@ int printf(const char* fmt, ...)
     return (int)strnlen(buf, BUFSIZ - 1) + 1;
 }
 
-
-uint32_t hoge_hash(){
-    std::string s="hello";
-    uint32_t h1=0,h2=0;
-    hashlittle2(s.c_str(),s.length(),&h1,&h2);
+uint32_t hoge_hash()
+{
+    std::string s = "hello";
+    uint32_t h1 = 0, h2 = 0;
+    hashlittle2(s.c_str(), s.length(), &h1, &h2);
     return h1;
 }
 
@@ -160,13 +160,13 @@ public:
 
     int get_version(int l, int r)
     {
-        return __sync_add_and_fetch(&key_versions[l][r],0);
+        return __sync_add_and_fetch(&key_versions[l][r], 0);
     }
 
     double increase_version_t = 0;
     void increase_version(int l, int r)
     {
-        __sync_add_and_fetch(&key_versions[l][r],1);
+        __sync_add_and_fetch(&key_versions[l][r], 1);
     }
 
     int get(std::string key)
@@ -372,11 +372,11 @@ public:
 
         auto add_next_node = [&](vector<pair<uint32_t, int>> &p, vector<int> &v)
         {
-            assert(v.size()+1==p.size());
+            assert(v.size() + 1 == p.size());
             bool is_success = false;
             pair<int, int> before = p[p.size() - 1];
             assert(table[before.first][before.second] != NULL);
-            v.push_back(get_version(before.first,before.second));
+            v.push_back(get_version(before.first, before.second));
             string key = table[before.first][before.second]->data->key;
             int val = table[before.first][before.second]->data->val;
             uint32_t h1 = 0, h2 = 0;
@@ -466,7 +466,7 @@ public:
             ABORT();
             return false;
         }
-        assert(path.size()!=1);
+        assert(path.size() != 1);
         // if (path.size() == 1)
         // {
         //     pair<int, int> index = path.front();
@@ -488,7 +488,7 @@ public:
             auto to = path[i];
             auto from = path[i - 1];
 
-            assert((table[to.first][to.second]!=NULL || i==path.size()-1) && table[from.first][from.second]!=NULL);
+            assert((table[to.first][to.second] != NULL || i == path.size() - 1) && table[from.first][from.second] != NULL);
 
             // lock smaller in first.
             if (to < from)
@@ -536,18 +536,19 @@ public:
         table_locks[path[0].first][path[0].second].unlock();
         return true;
     }
-    // OptCuckoo(const OptCuckoo &cuckoo){
-        
+    // OptCuckoo(const OptCuckoo &cuckoo)
+    // {
     // }
 };
 
-OptCuckoo cuckoo(8000 * 1000);
+OptCuckoo *cuckoo;
 
 void ecall_init(){
-    // cuckoo=OptCuckoo(8000 * 1000);
+    cuckoo = new OptCuckoo(8000*1000);
 }
 
-void ecall_put(int n,int tid){
-    // std::string s="random"+to_string(n);
-    // cuckoo.put(s,n,tid);
+void ecall_put(int n, int tid)
+{
+    std::string s = "random" + to_string(n);
+    cuckoo->put(s,n,tid);
 }
