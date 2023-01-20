@@ -201,27 +201,27 @@ int SGX_CDECL main(int argc, char *argv[])
         for (int loop = 0; loop < 1; loop++)
         {
             std::cout << "start constructor" << std::endl;
-            // ecall_init(global_eid);
+            ecall_init(global_eid);
             std::cout << "start : " << loop << std::endl;
             std::vector<std::thread> threads;
-            auto write = [](int tid, int t_num)
+            bool flag = false;
+            auto write = [](int tid, int t_num, int ops, sgx_enclave_id_t eid,bool &flag)
             {
+                while (!flag)
+                {
+                }
                 for (int i = tid; i < ops; i += t_num)
                 {
-                    ecall_put(global_eid, i, tid);
+                    ecall_put(eid, i, tid);
                 }
             };
-
-            auto F = [](int lps){
-                hoge(global_eid,lps);
-            };
-
-            auto s = get_now();
             for (int i = 0; i < t_num; i++)
             {
-                // threads.emplace_back(write, i, t_num);
-                threads.emplace_back(F,ops/t_num);
+                threads.emplace_back(write, i, t_num, ops, global_eid,std::ref(flag));
             }
+
+            auto s = get_now();
+            flag = true;
             for (int i = 0; i < t_num; i++)
             {
                 threads[i].join();

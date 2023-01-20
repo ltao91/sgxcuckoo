@@ -61,6 +61,5 @@ enclave {
     trusted{
         public void ecall_put(int n,int tid);
         public void ecall_init();
-        public void hoge(int lps);
     };
 };
