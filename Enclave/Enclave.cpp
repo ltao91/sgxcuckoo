@@ -553,3 +553,10 @@ void ecall_put(int n, int tid)
     std::string s = "random" + to_string(n);
     cuckoo->put(s,n,tid);
 }
+
+void hoge(int lps){
+    int a=0;
+    for(int i=0;i<lps;i++){
+        a=a+3;
+    }
+}

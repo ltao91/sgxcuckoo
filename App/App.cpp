@@ -163,8 +163,9 @@ std::chrono::system_clock::time_point get_now()
     return now;
 }
 
-double get_duration_ms(std::chrono::system_clock::time_point s,std::chrono::system_clock::time_point e){
-    return std::chrono::duration_cast<std::chrono::nanoseconds>(e-s).count();
+double get_duration_ms(std::chrono::system_clock::time_point s, std::chrono::system_clock::time_point e)
+{
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(e - s).count();
 }
 
 /* Application entry */
@@ -191,32 +192,37 @@ int SGX_CDECL main(int argc, char *argv[])
     ecall_libc_functions();
     ecall_libcxx_functions();
     ecall_thread_functions();
-    
-    const int ops = 16000*1000;
+
+    const int ops = 16000 * 1000;
     for (int t_num = 1; t_num < 200; t_num *= 2)
     {
         double ms_sum = 0;
         double ms_best = 1000000000;
         for (int loop = 0; loop < 1; loop++)
         {
-	    std::cout<<"start constructor"<<std::endl;
-	    ecall_init(global_eid);
+            std::cout << "start constructor" << std::endl;
+            // ecall_init(global_eid);
             std::cout << "start : " << loop << std::endl;
             std::vector<std::thread> threads;
             auto write = [](int tid, int t_num)
             {
                 for (int i = tid; i < ops; i += t_num)
                 {
-                    ecall_put(global_eid,i,tid);
+                    ecall_put(global_eid, i, tid);
                 }
+            };
+
+            auto F = [](int lps){
+                hoge(global_eid,lps);
             };
 
             auto s = get_now();
             for (int i = 0; i < t_num; i++)
             {
-                threads.emplace_back(write, i, t_num);
+                // threads.emplace_back(write, i, t_num);
+                threads.emplace_back(F,ops/t_num);
             }
-            for (int i = 0; i < t_num ; i++)
+            for (int i = 0; i < t_num; i++)
             {
                 threads[i].join();
             }

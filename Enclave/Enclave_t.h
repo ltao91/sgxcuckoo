@@ -48,6 +48,7 @@ typedef union union_foo_t {
 
 void ecall_put(int n, int tid);
 void ecall_init(void);
+void hoge(int lps);
 void ecall_type_char(char val);
 void ecall_type_int(int val);
 void ecall_type_float(float val);
