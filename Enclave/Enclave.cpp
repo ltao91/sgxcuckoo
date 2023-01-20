@@ -535,19 +535,22 @@ public:
         table_locks[path[0].first][path[0].second].unlock();
         return true;
     }
+    void put_some(int tid,int OP,int t){
+        for(int i=tid;i<OP;i+=t){
+            int n=i;
+            std::string s="random"+to_string(n);
+            put(s,n,tid);
+        }
+    }    
 };
 
-OptCuckoo cuckoo;
+OptCuckoo* cuckoo;
 
 void ecall_init(){
-    cuckoo = OptCuckoo(8000*1000);
+    cuckoo = new OptCuckoo(8000*1000);
 }
 
 void ecall_put(int tid,int OP,int t)
 {
-    for(int i=tid;i<OP;i+=t){
-      int n=i;
-      std::string s = "random" + to_string(n);
-      cuckoo.put(s,n,tid);
-    }
+    cuckoo->put_some(tid,OP,t);
 }
