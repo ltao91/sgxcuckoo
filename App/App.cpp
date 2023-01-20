@@ -192,14 +192,15 @@ int SGX_CDECL main(int argc, char *argv[])
     ecall_libcxx_functions();
     ecall_thread_functions();
     
-    const int ops = 16000*000;
-    ecall_init(global_eid);
+    const int ops = 16000*1000;
     for (int t_num = 1; t_num < 200; t_num *= 2)
     {
         double ms_sum = 0;
         double ms_best = 1000000000;
-        for (int loop = 0; loop < 10; loop++)
+        for (int loop = 0; loop < 1; loop++)
         {
+	    std::cout<<"start constructor"<<std::endl;
+	    ecall_init(global_eid);
             std::cout << "start : " << loop << std::endl;
             std::vector<std::thread> threads;
             auto write = [](int tid, int t_num)
