@@ -195,7 +195,7 @@ int SGX_CDECL main(int argc, char *argv[])
 
     const int ops = 16000 * 1000;
     int thread_num=2;
-    for (int t_num = thread_num; t_num < thread_num+1; t_num *= 2)
+    for (int t_num = 1; t_num < 200; t_num *= 2)
     {
         double ms_sum = 0;
         double ms_best = 1000000000;
