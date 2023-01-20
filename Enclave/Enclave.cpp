@@ -100,20 +100,10 @@ public:
             tag = t_tag;
             data = new Data(t_key, t_val);
         }
-        // ~Node(){
-        //     delete data;
-        // }
+        ~Node(){
+            if(data!=NULL)delete data;
+        }
     };
-    // ~OptCuckoo(){
-    //     for(auto &i:table){
-    //         for(auto &j:i){
-    //             if(j!=nullptr){
-    //                 delete j;
-    //                 j=nullptr;
-    //             }
-    //         }
-    //     }
-    // }
 
     const int SLOTS_NUM = 4;
     const int MAX_LOOP_FOR_PUT = 80 * 1000;
@@ -145,7 +135,7 @@ public:
     {
         table_size = t_table_size;
         table = vector<vector<Node *>>(table_size, vector<Node *>(SLOTS_NUM));
-        visited = vector<vector<int>>(table_size, vector<int>(SLOTS_NUM));
+        // visited = vector<vector<int>>(table_size, vector<int>(SLOTS_NUM));
         key_versions = vector<vector<int>>(table_size, vector<int>(SLOTS_NUM));
         for (int i = 0; i < table_size; i++)
         {
@@ -154,8 +144,19 @@ public:
         }
 
         key_versions_size = table_size;
-        longest = vector<pair<pair<int, int>, int>>();
+        // longest = vector<pair<pair<int, int>, int>>();
     }
+
+    ~OptCuckoo(){
+        for(int i=0;i<table_size;i++){
+            for(int j=0;j<SLOTS_NUM;j++){
+                if(table[i][j]!=NULL){
+                    delete table[i][j];
+                }
+            }
+        }
+    }
+
     double get_version_t = 0;
 
     int get_version(int l, int r)
