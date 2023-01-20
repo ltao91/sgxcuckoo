@@ -46,7 +46,7 @@ typedef union union_foo_t {
 } union_foo_t;
 #endif
 
-void ecall_put(int n, int tid);
+void ecall_put(int tid, int OP, int t);
 void ecall_init(void);
 void ecall_type_char(char val);
 void ecall_type_int(int val);

@@ -28,8 +28,9 @@
 
 
 typedef struct ms_ecall_put_t {
-	int ms_n;
 	int ms_tid;
+	int ms_OP;
+	int ms_t;
 } ms_ecall_put_t;
 
 typedef struct ms_ecall_type_char_t {
@@ -200,7 +201,7 @@ static sgx_status_t SGX_CDECL sgx_ecall_put(void* pms)
 	sgx_status_t status = SGX_SUCCESS;
 
 
-	ecall_put(ms->ms_n, ms->ms_tid);
+	ecall_put(ms->ms_tid, ms->ms_OP, ms->ms_t);
 
 
 	return status;

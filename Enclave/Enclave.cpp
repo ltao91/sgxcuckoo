@@ -105,8 +105,8 @@ public:
         }
     };
 
-    const int SLOTS_NUM = 4;
-    const int MAX_LOOP_FOR_PUT = 80 * 1000;
+    int SLOTS_NUM = 4;
+    int MAX_LOOP_FOR_PUT = 80 * 1000;
 
     int table_size;
     int key_size;
@@ -135,7 +135,6 @@ public:
     {
         table_size = t_table_size;
         table = vector<vector<Node *>>(table_size, vector<Node *>(SLOTS_NUM));
-        // visited = vector<vector<int>>(table_size, vector<int>(SLOTS_NUM));
         key_versions = vector<vector<int>>(table_size, vector<int>(SLOTS_NUM));
         for (int i = 0; i < table_size; i++)
         {
@@ -144,7 +143,6 @@ public:
         }
 
         key_versions_size = table_size;
-        // longest = vector<pair<pair<int, int>, int>>();
     }
 
     ~OptCuckoo(){
@@ -537,19 +535,19 @@ public:
         table_locks[path[0].first][path[0].second].unlock();
         return true;
     }
-    // OptCuckoo(const OptCuckoo &cuckoo)
-    // {
-    // }
 };
 
-OptCuckoo* cuckoo;
+OptCuckoo cuckoo;
 
 void ecall_init(){
-    cuckoo = new OptCuckoo(8000*1000);
+    cuckoo = OptCuckoo(8000*1000);
 }
 
-void ecall_put(int n, int tid)
+void ecall_put(int tid,int OP,int t)
 {
-    std::string s = "random" + to_string(n);
-    cuckoo->put(s,n,tid);
+    for(int i=tid;i<OP;i+=t){
+      int n=i;
+      std::string s = "random" + to_string(n);
+      cuckoo.put(s,n,tid);
+    }
 }

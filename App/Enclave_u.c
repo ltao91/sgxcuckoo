@@ -2,8 +2,9 @@
 #include <errno.h>
 
 typedef struct ms_ecall_put_t {
-	int ms_n;
 	int ms_tid;
+	int ms_OP;
+	int ms_t;
 } ms_ecall_put_t;
 
 typedef struct ms_ecall_type_char_t {
@@ -269,12 +270,13 @@ static const struct {
 		(void*)Enclave_sgx_thread_set_multiple_untrusted_events_ocall,
 	}
 };
-sgx_status_t ecall_put(sgx_enclave_id_t eid, int n, int tid)
+sgx_status_t ecall_put(sgx_enclave_id_t eid, int tid, int OP, int t)
 {
 	sgx_status_t status;
 	ms_ecall_put_t ms;
-	ms.ms_n = n;
 	ms.ms_tid = tid;
+	ms.ms_OP = OP;
+	ms.ms_t = t;
 	status = sgx_ecall(eid, 0, &ocall_table_Enclave, &ms);
 	return status;
 }

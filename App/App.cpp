@@ -194,7 +194,8 @@ int SGX_CDECL main(int argc, char *argv[])
     ecall_thread_functions();
 
     const int ops = 16000 * 1000;
-    for (int t_num = 1; t_num < 200; t_num *= 2)
+    int thread_num=2;
+    for (int t_num = thread_num; t_num < thread_num+1; t_num *= 2)
     {
         double ms_sum = 0;
         double ms_best = 1000000000;
@@ -210,11 +211,9 @@ int SGX_CDECL main(int argc, char *argv[])
                 while (!flag)
                 {
                 }
-                for (int i = tid; i < ops; i += t_num)
-                {
-                    ecall_put(eid, i, tid);
-                }
+                    ecall_put(eid,  tid, ops, t_num);
             };
+	    
             for (int i = 0; i < t_num; i++)
             {
                 threads.emplace_back(write, i, t_num, ops, global_eid,std::ref(flag));
