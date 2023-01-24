@@ -538,7 +538,7 @@ public:
     void put_some(int tid,int OP,int t){
         for(int i=tid;i<OP;i+=t){
             int n=i;
-            std::string s="random"+to_string(n);
+            std::string s="random:"+to_string(n);
             put(s,n,tid);
         }
     }    
@@ -547,7 +547,7 @@ public:
 OptCuckoo* cuckoo;
 
 void ecall_init(){
-    cuckoo = new OptCuckoo(8000*1000);
+    cuckoo = new OptCuckoo(800*1000);
 }
 
 void ecall_put(int tid,int OP,int t)

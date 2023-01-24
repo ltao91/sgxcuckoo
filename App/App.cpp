@@ -193,7 +193,7 @@ int SGX_CDECL main(int argc, char *argv[])
     ecall_libcxx_functions();
     ecall_thread_functions();
 
-    const int ops = 16000 * 1000;
+    const int ops = 1600 * 1000;
     int thread_num=2;
     for (int t_num = 1; t_num < 200; t_num *= 2)
     {
