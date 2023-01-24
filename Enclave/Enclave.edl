@@ -61,5 +61,6 @@ enclave {
     trusted{
         public void ecall_put(int tid,int OP,int t);
         public void ecall_init();
+	public int get_aborted_nums();
     };
 };

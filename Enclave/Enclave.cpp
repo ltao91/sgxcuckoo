@@ -125,9 +125,10 @@ public:
         uint32_t t = input & 0xff;
         return (unsigned char)t + (t == 0);
     }
-
+    int aborted_nums=0;
     void ABORT()
     {
+	aborted_nums++;
         // this is for debug and for annotation
         // cout<<"ABORTED"<<endl;
     }
@@ -545,7 +546,9 @@ public:
 };
 
 OptCuckoo* cuckoo;
-
+int get_aborted_nums(){
+        return cuckoo->aborted_nums;
+}
 void ecall_init(){
     cuckoo = new OptCuckoo(800*1000);
 }

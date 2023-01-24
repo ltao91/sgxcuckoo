@@ -231,6 +231,9 @@ int SGX_CDECL main(int argc, char *argv[])
         }
         std::cout << ms_sum / 10 << std::endl;
         std::cout << ms_best << std::endl;
+	int res=0;
+	get_aborted_nums(global_eid,&res);
+	std::cout<<res<<std::endl;
     }
 
     /* Destroy the enclave */
