@@ -39,13 +39,45 @@
 #include "common/hash.h"
 #include <iostream>
 #include <vector>
-#include <mutex>
 #include <queue>
 #include <thread>
 #include <cassert>
 #include <unordered_map>
 
 using namespace std;
+
+class MyLock
+{
+public:
+    static constexpr unsigned int LockBit = 0x01;
+    static constexpr unsigned int UnlockBit = 0x00;
+    std::atomic<unsigned int> Mutex;
+    bool core()
+    {
+        auto expected = UnlockBit;
+        Mutex.compare_exchange_strong(expected, LockBit);
+        if (expected == UnlockBit)
+        {
+            return true;
+        }
+        return false;
+    }
+    void lock()
+    {
+        while (true)
+        {
+            bool ok = core();
+            if (ok)
+            {
+                break;
+            }
+        }
+    }
+    void unlock()
+    {
+        Mutex.store(UnlockBit);
+    }
+};
 
 /*
  * printf:
@@ -100,8 +132,10 @@ public:
             tag = t_tag;
             data = new Data(t_key, t_val);
         }
-        ~Node(){
-            if(data!=NULL)delete data;
+        ~Node()
+        {
+            if (data != NULL)
+                delete data;
         }
     };
 
@@ -113,22 +147,19 @@ public:
     int key_versions_size;
 
     vector<vector<Node *>> table;
-    vector<vector<mutex>> table_locks;
+    vector<vector<MyLock>> table_locks;
     vector<vector<int>> visited;
     vector<vector<int>> key_versions;
-    vector<vector<mutex>> key_versions_locks;
-
-    // mutex giant_write_lock;
 
     unsigned char get_tag(const uint32_t input)
     {
         uint32_t t = input & 0xff;
         return (unsigned char)t + (t == 0);
     }
-    int aborted_nums=0;
+    int aborted_nums = 0;
     void ABORT()
     {
-	aborted_nums++;
+        aborted_nums++;
         // this is for debug and for annotation
         // cout<<"ABORTED"<<endl;
     }
@@ -139,17 +170,20 @@ public:
         key_versions = vector<vector<int>>(table_size, vector<int>(SLOTS_NUM));
         for (int i = 0; i < table_size; i++)
         {
-            key_versions_locks.emplace_back(vector<mutex>(SLOTS_NUM));
-            table_locks.emplace_back(vector<mutex>(SLOTS_NUM));
+            table_locks.emplace_back(vector<MyLock>(SLOTS_NUM));
         }
 
         key_versions_size = table_size;
     }
 
-    ~OptCuckoo(){
-        for(int i=0;i<table_size;i++){
-            for(int j=0;j<SLOTS_NUM;j++){
-                if(table[i][j]!=NULL){
+    ~OptCuckoo()
+    {
+        for (int i = 0; i < table_size; i++)
+        {
+            for (int j = 0; j < SLOTS_NUM; j++)
+            {
+                if (table[i][j] != NULL)
+                {
                     delete table[i][j];
                 }
             }
@@ -536,24 +570,28 @@ public:
         table_locks[path[0].first][path[0].second].unlock();
         return true;
     }
-    void put_some(int tid,int OP,int t){
-        for(int i=tid;i<OP;i+=t){
-            int n=i;
-            std::string s="random:"+to_string(n);
-            put(s,n,tid);
+    void put_some(int tid, int OP, int t)
+    {
+        for (int i = tid; i < OP; i += t)
+        {
+            int n = i;
+            std::string s = "random:" + to_string(n);
+            put(s, n, tid);
         }
-    }    
+    }
 };
 
-OptCuckoo* cuckoo;
-int get_aborted_nums(){
-        return cuckoo->aborted_nums;
+OptCuckoo *cuckoo;
+int get_aborted_nums()
+{
+    return cuckoo->aborted_nums;
 }
-void ecall_init(){
-    cuckoo = new OptCuckoo(800*1000);
+void ecall_init()
+{
+    cuckoo = new OptCuckoo(800 * 1000);
 }
 
-void ecall_put(int tid,int OP,int t)
+void ecall_put(int tid, int OP, int t)
 {
-    cuckoo->put_some(tid,OP,t);
+    cuckoo->put_some(tid, OP, t);
 }
