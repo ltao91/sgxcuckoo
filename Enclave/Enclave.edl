@@ -62,5 +62,11 @@ enclave {
         public void ecall_put(int tid,int OP,int t);
         public void ecall_init();
 	public int get_aborted_nums();
+	public void elall_put_one(int tid, int n);
+    	public void ecall_vector();
+	public void ecall_queue();
+	public void ecall_get(int tid,int OP,int t);
+	public void ecall_loop(int n);
+	public void ecall_hoge_init();
     };
 };

@@ -66,8 +66,9 @@ public:
     {
         while (true)
         {
-            bool ok = core();
-            if (ok)
+            //bool ok = core();
+            bool ok=true;
+	    if (ok)
             {
                 break;
             }
@@ -75,7 +76,7 @@ public:
     }
     void unlock()
     {
-        Mutex.store(UnlockBit);
+        //Mutex.store(UnlockBit);
     }
 };
 
@@ -579,6 +580,13 @@ public:
             put(s, n, tid);
         }
     }
+    void get_some(int tid,int OP,int t){
+    	for(int i=tid;i<OP;i+=t){
+	  int n=i;
+	  std::string s="random:"+to_string(n);
+	  get(s);
+	}
+    }
 };
 
 OptCuckoo *cuckoo;
@@ -588,10 +596,53 @@ int get_aborted_nums()
 }
 void ecall_init()
 {
-    cuckoo = new OptCuckoo(800 * 1000);
+    cuckoo = new OptCuckoo(50 * 1000);
 }
 
 void ecall_put(int tid, int OP, int t)
 {
     cuckoo->put_some(tid, OP, t);
 }
+void ecall_get(int tid,int OP,int t)
+{
+      cuckoo->get_some(tid,OP,t);
+    
+}	
+void elall_put_one(int tid, int n){
+    std::string s = "random:" + to_string(n);
+    cuckoo->put(s,n,tid);
+}
+void ecall_vector(){
+    vector<int> v(1000*1000);
+    for(int i=0;i<100*1000*1000;i++){
+    	int n=v.at(i%v.size());
+    }
+}
+void ecall_queue(){
+    queue<int> q;
+    for(int i=0;i<100*1000*1000;i++){
+        q.push(i);
+    }
+}
+class HOGE{
+	public:
+		int n;
+	public:
+		HOGE():n(10){
+		}
+};
+
+HOGE* hoge_class;
+
+void ecall_hoge_init(){
+	hoge_class=new HOGE();
+}
+
+void ecall_loop(int n){
+  int a=0;
+  for(int i=0;i<n;i++){
+    auto x=new HOGE();
+    delete x;
+  }
+}
+

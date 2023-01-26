@@ -193,17 +193,17 @@ int SGX_CDECL main(int argc, char *argv[])
     ecall_libcxx_functions();
     ecall_thread_functions();
 
-    const int ops = 1600 * 1000;
-    int thread_num=2;
-    for (int t_num = 1; t_num < 200; t_num *= 2)
+    const int ops = 16000 * 1000;
+    int thread_num=4;
+    for (int t_num =32; t_num < 300; t_num *= 2)
     {
         double ms_sum = 0;
         double ms_best = 1000000000;
-        for (int loop = 0; loop < 1; loop++)
+        for (int loop = 0; loop < 10; loop++)
         {
-            std::cout << "start constructor" << std::endl;
-            ecall_init(global_eid);
-            std::cout << "start : " << loop << std::endl;
+            //std::cout << "start constructor" << std::endl;
+            //ecall_init(global_eid);
+            //std::cout << "start : " << loop << std::endl;
             std::vector<std::thread> threads;
             bool flag = false;
             auto write = [](int tid, int t_num, int ops, sgx_enclave_id_t eid,bool &flag)
@@ -211,14 +211,36 @@ int SGX_CDECL main(int argc, char *argv[])
                 while (!flag)
                 {
                 }
-                    ecall_put(eid,  tid, ops, t_num);
+                    //ecall_put(eid,  tid, ops, t_num);
+		    ecall_loop(eid,ops/t_num);
+		    //for(int i=tid;i<ops;i+=t_num)
+		    //	elall_put_one(global_eid,tid,i);
+            };
+	    auto test=[](int t_num,int ops, sgx_enclave_id_t eid,bool &flag){
+		while(!flag)
+		{
+		}
+		ecall_loop(eid,ops/t_num);
+	    };
+	     auto read = [](int tid, int t_num, int ops, sgx_enclave_id_t eid,bool &flag)
+            {
+                while (!flag)
+                {
+                } 
+                    ecall_get(eid,  tid, ops, t_num);
+                    //ecall_loop(eid,ops*10/t_num);
             };
 	    
             for (int i = 0; i < t_num; i++)
             {
-                threads.emplace_back(write, i, t_num, ops, global_eid,std::ref(flag));
+		    threads.emplace_back(test,t_num,ops,global_eid,std::ref(flag));
+                //threads.emplace_back(write, i, t_num, ops, global_eid,std::ref(flag));
             }
-
+	    //	for (int i = 0; i < t_num; i++)
+            //  {
+            //    threads.emplace_back(read, i, t_num, ops, global_eid,std::ref(flag));
+            //}
+	    ecall_hoge_init(global_eid);
             auto s = get_now();
             flag = true;
             for (int i = 0; i < t_num; i++)
@@ -229,11 +251,10 @@ int SGX_CDECL main(int argc, char *argv[])
             ms_sum += get_duration_ms(s, e) / 1000000;
             ms_best = std::min(ms_best, get_duration_ms(s, e) / 1000000);
         }
-        std::cout << ms_sum / 10 << std::endl;
+        //std::cout << ms_sum / 10 << std::endl;
         std::cout << ms_best << std::endl;
 	int res=0;
-	get_aborted_nums(global_eid,&res);
-	std::cout<<res<<std::endl;
+	//std::cout<<res<<std::endl;
     }
 
     /* Destroy the enclave */
