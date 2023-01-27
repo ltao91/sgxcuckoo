@@ -266,7 +266,7 @@ int SGX_CDECL main(int argc, char *argv[])
         }
         ecall_loop(eid, n);
     };
-    for (int t = 1; t < 300; t *= 2)
+    for (int t = 8; t < 300; t *= 2)
     {
         double best=10000000;
         for (int loop = 0; loop < 10; loop++)
@@ -283,9 +283,10 @@ int SGX_CDECL main(int argc, char *argv[])
                 threads[i].join();
             }
             auto e=get_now();
+	    std::cout<<get_duration_ms(s,e)<<std::endl;;
             best=std::min(best,get_duration_ms(s,e));
         }
-        std::cout<<best<<std::endl;
+        std::cout<<"best:"<<best<<std::endl;
     }
 
     /* Destroy the enclave */
