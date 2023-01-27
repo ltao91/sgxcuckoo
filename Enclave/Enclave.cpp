@@ -635,7 +635,6 @@ class HOGE{
 HOGE* hoge_class;
 
 void ecall_hoge_init(){
-	hoge_class=new HOGE();
 }
 
 void ecall_loop(int n){

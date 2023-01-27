@@ -193,42 +193,42 @@ int SGX_CDECL main(int argc, char *argv[])
     ecall_libcxx_functions();
     ecall_thread_functions();
 
-    const int ops = 16000 * 1000;
-    int thread_num=4;
-    for (int t_num =32; t_num < 300; t_num *= 2)
-    {
-        double ms_sum = 0;
-        double ms_best = 1000000000;
-        for (int loop = 0; loop < 10; loop++)
-        {
-            //std::cout << "start constructor" << std::endl;
-            //ecall_init(global_eid);
-            //std::cout << "start : " << loop << std::endl;
-            std::vector<std::thread> threads;
-            bool flag = false;
-            auto write = [](int tid, int t_num, int ops, sgx_enclave_id_t eid,bool &flag)
-            {
-                while (!flag)
-                {
-                }
-                    //ecall_put(eid,  tid, ops, t_num);
-		    ecall_loop(eid,ops/t_num);
-		    //for(int i=tid;i<ops;i+=t_num)
-		    //	elall_put_one(global_eid,tid,i);
-            };
-	    auto test=[](int t_num,int ops, sgx_enclave_id_t eid,bool &flag){
-		while(!flag)
-		{
-		}
-		ecall_loop(eid,ops/t_num);
-	    };
-	     auto read = [](int tid, int t_num, int ops, sgx_enclave_id_t eid,bool &flag)
-            {
-                while (!flag)
-                {
-                } 
-                    ecall_get(eid,  tid, ops, t_num);
-                    //ecall_loop(eid,ops*10/t_num);
+    //const int ops = 16000 * 1000;
+    //int thread_num=128;
+    //for (int t_num =thread_num; t_num < thread_num+1; t_num *= 2)
+    //{
+    //    double ms_sum = 0;
+    //    double ms_best = 1000000000;
+    //    for (int loop = 0; loop < 10; loop++)
+    //    {
+    //      //std::cout << "start constructor" << std::endl;
+    //        //ecall_init(global_eid);
+    //        //std::cout << "start : " << loop << std::endl;
+    //        std::vector<std::thread> threads;
+    //        bool flag = false;
+    //        auto write = [](int tid, int t_num, int ops, sgx_enclave_id_t eid,bool &flag)
+    //        {
+    //            while (!flag)
+    //            {
+    //            }
+    //                //ecall_put(eid,  tid, ops, t_num);
+//		    ecall_loop(eid,ops/t_num);
+//		    //for(int i=tid;i<ops;i+=t_num)
+//		    //	elall_put_one(global_eid,tid,i);
+  //          };
+//	    auto test=[](int t_num,int ops, sgx_enclave_id_t eid,bool &flag){
+//		while(!flag)
+//		{
+//		}
+//		ecall_loop(eid,ops/t_num);
+//	    };
+//	     auto read = [](int tid, int t_num, int ops, sgx_enclave_id_t eid,bool &flag)
+//            {
+ //               while (!flag)
+   //             {
+     //           } 
+       //             ecall_get(eid,  tid, ops, t_num);
+       //             //ecall_loop(eid,ops*10/t_num);
             };
 	    
             for (int i = 0; i < t_num; i++)
