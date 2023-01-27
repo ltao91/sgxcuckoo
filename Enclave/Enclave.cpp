@@ -637,6 +637,7 @@ HOGE* hoge_class;
 void ecall_hoge_init(){
 }
 
+//allocate for n times
 void ecall_loop(int n){
   int a=0;
   for(int i=0;i<n;i++){
