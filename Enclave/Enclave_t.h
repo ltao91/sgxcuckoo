@@ -55,6 +55,8 @@ void ecall_queue(void);
 void ecall_get(int tid, int OP, int t);
 void ecall_loop(int n);
 void ecall_hoge_init(void);
+int is_fine(int t);
+void activate(void);
 void ecall_type_char(char val);
 void ecall_type_int(int val);
 void ecall_type_float(float val);

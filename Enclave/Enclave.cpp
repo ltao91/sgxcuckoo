@@ -66,9 +66,9 @@ public:
     {
         while (true)
         {
-            //bool ok = core();
-            bool ok=true;
-	    if (ok)
+            // bool ok = core();
+            bool ok = true;
+            if (ok)
             {
                 break;
             }
@@ -76,7 +76,7 @@ public:
     }
     void unlock()
     {
-        //Mutex.store(UnlockBit);
+        // Mutex.store(UnlockBit);
     }
 };
 
@@ -272,6 +272,304 @@ public:
     double sum_time = 0;
     int evict_null = 0;
     vector<pair<pair<int, int>, int>> longest;
+
+    void putp(Node *node, int TID)
+    {
+        int i = 0;
+        while (!putp_impl(node, TID))
+        {
+            ABORT();
+            i++;
+            aborted_num++;
+            if (i >= 100000)
+            {
+                return;
+            }
+        }
+    }
+
+    bool putp_impl(Node *node, int TID)
+    {
+        string key = node->data->key;
+        int val = node->data->val;
+        string original_key = key;
+        int original_val = val;
+        unsigned char original_tag;
+
+        vector<pair<uint32_t, int>> path;
+        vector<int> path_versions_history;
+
+        queue<pair<vector<pair<uint32_t, int>>, vector<int>>> que; //(path,version)
+        bool found_shortest_path = false;
+
+        uint32_t th1 = 0;
+        uint32_t th2 = 0;
+        hashlittle2(key.c_str(), key.length(), &th1, &th2);
+        unsigned char tag = get_tag(th1);
+        original_tag = tag;
+        node->tag = original_tag;
+        auto original_node = node;
+        if (th1 < 0)
+            th1 += table_size;
+        if (th2 < 0)
+            th2 += table_size;
+        th1 = (th1) % table_size;
+        th2 = (th2) % table_size;
+
+        // search in h1
+        for (int i = 0; i < SLOTS_NUM; i++)
+        {
+            Node *node = table[th1][i];
+            if (node == nullptr)
+            {
+                pair<int, int> index = make_pair(th1, i);
+                table_locks[index.first][index.second].lock();
+                if (table[index.first][index.second] != nullptr)
+                {
+                    ABORT();
+                    table_locks[index.first][index.second].unlock();
+                    continue;
+                }
+                increase_version(index.first, index.second);
+                table[index.first][index.second] = original_node;
+                increase_version(index.first, index.second);
+                table_locks[index.first][index.second].unlock();
+                return true;
+            }
+            else if (node->tag == tag && node->data->key == key)
+            {
+                table_locks[th1][i].lock();
+                if (node->data->key != key)
+                {
+                    table_locks[th1][i].unlock();
+                    continue;
+                }
+                increase_version(th1, i);
+                node->data->val = val;
+                increase_version(th1, i);
+                table_locks[th1][i].unlock();
+                return true;
+            }
+        }
+        // search in h2
+        for (int i = 0; i < SLOTS_NUM; i++)
+        {
+            Node *node = table[th2][i];
+            if (node == nullptr)
+            {
+                pair<int, int> index = make_pair(th2, i);
+                table_locks[index.first][index.second].lock();
+                if (table[index.first][index.second] != nullptr)
+                {
+                    ABORT();
+                    table_locks[index.first][index.second].unlock();
+                    continue;
+                }
+                increase_version(index.first, index.second);
+                table[index.first][index.second] = original_node;
+                increase_version(index.first, index.second);
+                table_locks[index.first][index.second].unlock();
+                return true;
+            }
+            else if (node->tag == tag && node->data->key == key)
+            {
+                table_locks[th2][i].lock();
+                if (node->data->key != key)
+                {
+                    table_locks[th2][i].unlock();
+                    continue;
+                }
+                increase_version(th2, i);
+                node->data->val = val;
+                increase_version(th2, i);
+                table_locks[th2][i].unlock();
+                return true;
+            }
+        }
+
+        // if both of them are full, do bfs
+        for (int i = 0; i < SLOTS_NUM; i++)
+        {
+            {
+                vector<pair<uint32_t, int>> tp;
+                tp.push_back(make_pair(th1, i));
+                vector<int> tv;
+                que.push(make_pair(tp, tv));
+            }
+            {
+                vector<pair<uint32_t, int>> tp;
+                tp.push_back(make_pair(th2, i));
+                vector<int> tv;
+                que.push(make_pair(tp, tv));
+            }
+        }
+
+        auto add_next_node = [&](vector<pair<uint32_t, int>> &p, vector<int> &v)
+        {
+            assert(v.size() + 1 == p.size());
+            bool is_success = false;
+            pair<int, int> before = p[p.size() - 1];
+            assert(table[before.first][before.second] != NULL);
+            v.push_back(get_version(before.first, before.second));
+            string key = table[before.first][before.second]->data->key;
+            int val = table[before.first][before.second]->data->val;
+            uint32_t h1 = 0, h2 = 0;
+            hashlittle2(key.c_str(), key.length(), &h1, &h2);
+            unsigned char tag = get_tag(h1);
+            if (h1 < 0)
+                h1 += table_size;
+            if (h2 < 0)
+                h2 += table_size;
+            h1 = (h1) % table_size;
+            h2 = (h2) % table_size;
+
+            // search in h1
+            for (int i = 0; i < SLOTS_NUM; i++)
+            {
+                auto now = get_version(h1, i);
+                Node *node = table[h1][i];
+                if (node == NULL)
+                {
+                    v.push_back(now);
+                    p.push_back(make_pair(h1, i));
+                    is_success = true;
+                    found_shortest_path = true;
+                    break;
+                }
+            }
+            if (is_success)
+            {
+                return;
+            }
+
+            // search in h2
+            for (int i = 0; i < SLOTS_NUM; i++)
+            {
+                auto now = get_version(h2, i);
+                Node *node = table[h2][i];
+                if (node == NULL)
+                {
+                    v.push_back(now);
+                    p.push_back(make_pair(h2, i));
+                    is_success = true;
+                    found_shortest_path = true;
+                    break;
+                }
+            }
+            if (is_success)
+            {
+                return;
+            }
+
+            // if both of them are full, choose node to evict
+            Node *evict_node = NULL;
+            for (int i = 0; i < SLOTS_NUM; i++)
+            {
+                if (find(p.begin(), p.end(), make_pair(h1, i)) == p.end())
+                {
+                    auto np = p;
+                    np.push_back(make_pair(h1, i));
+                    que.push(make_pair(np, v));
+                }
+                if (find(p.begin(), p.end(), make_pair(h2, i)) == p.end())
+                {
+                    auto np = p;
+                    np.push_back(make_pair(h2, i));
+                    que.push(make_pair(np, v));
+                }
+            }
+        };
+        int counter = 0;
+        while (!que.empty())
+        {
+            auto now = que.front();
+            que.pop();
+            add_next_node(now.first, now.second);
+            if (found_shortest_path)
+            {
+                path = now.first;
+                path_versions_history = now.second;
+                break;
+            }
+            counter++;
+            // cout<<counter<<endl;
+        }
+
+        if (!found_shortest_path)
+        {
+            ABORT();
+            return false;
+        }
+        assert(path.size() != 1);
+        // if (path.size() == 1)
+        // {
+        //     pair<int, int> index = path.front();
+        //     table_locks[index.first][index.second].lock();
+        //     if (table[index.first][index.second] != NULL)
+        //     {
+        //         ABORT();
+        //         table_locks[index.first][index.second].unlock();
+        //         return false;
+        //     }
+        //     increase_version(index.first, index.second);
+        //     table[index.first][index.second] = original_node;
+        //     increase_version(index.first, index.second);
+        //     table_locks[index.first][index.second].unlock();
+        //     return true;
+        // }
+        for (int i = path.size() - 1; i > 0; i--)
+        {
+            auto to = path[i];
+            auto from = path[i - 1];
+
+            assert((table[to.first][to.second] != NULL || i == path.size() - 1) && table[from.first][from.second] != NULL);
+
+            // lock smaller in first.
+            if (to < from)
+            {
+                table_locks[to.first][to.second].lock();
+                table_locks[from.first][from.second].lock();
+            }
+            else
+            {
+                table_locks[from.first][from.second].lock();
+                table_locks[to.first][to.second].lock();
+            }
+
+            if (get_version(to.first, to.second) != path_versions_history[i] || path_versions_history[i] & 0x1)
+            {
+                ABORT();
+                table_locks[to.first][to.second].unlock();
+                table_locks[from.first][from.second].unlock();
+                return false;
+            }
+            if (get_version(from.first, from.second) != path_versions_history[i - 1] || path_versions_history[i - 1] & 0x1)
+            {
+                ABORT();
+                table_locks[to.first][to.second].unlock();
+                table_locks[from.first][from.second].unlock();
+                return false;
+            }
+            increase_version(to.first, to.second);
+            table[to.first][to.second] = table[from.first][from.second];
+            // table[from.first][from.second] = NULL;
+            increase_version(to.first, to.second);
+            table_locks[to.first][to.second].unlock();
+            table_locks[from.first][from.second].unlock();
+        }
+        table_locks[path[0].first][path[0].second].lock();
+        if (get_version(path[0].first, path[0].second) != path_versions_history[0] || path_versions_history[0] & 0x1)
+        {
+            ABORT();
+            table_locks[path[0].first][path[0].second].unlock();
+            return false;
+        }
+        increase_version(path[0].first, path[0].second);
+        table[path[0].first][path[0].second] = original_node;
+        increase_version(path[0].first, path[0].second);
+        table_locks[path[0].first][path[0].second].unlock();
+        return true;
+    }
 
     void put(std::string key, int val, int TID)
     {
@@ -571,6 +869,7 @@ public:
         table_locks[path[0].first][path[0].second].unlock();
         return true;
     }
+
     void put_some(int tid, int OP, int t)
     {
         for (int i = tid; i < OP; i += t)
@@ -580,12 +879,14 @@ public:
             put(s, n, tid);
         }
     }
-    void get_some(int tid,int OP,int t){
-    	for(int i=tid;i<OP;i+=t){
-	  int n=i;
-	  std::string s="random:"+to_string(n);
-	  get(s);
-	}
+    void get_some(int tid, int OP, int t)
+    {
+        for (int i = tid; i < OP; i += t)
+        {
+            int n = i;
+            std::string s = "random:" + to_string(n);
+            get(s);
+        }
     }
 };
 
@@ -594,55 +895,104 @@ int get_aborted_nums()
 {
     return cuckoo->aborted_nums;
 }
+bool flag = false;
+
 void ecall_init()
 {
     cuckoo = new OptCuckoo(50 * 1000);
+    flag = false;
+}
+
+// void ecall_put(int tid, int OP, int t)
+// {
+//     cuckoo->put_some(tid, OP, t);
+// }
+int ready[300];
+
+int is_fine(int t)
+{
+    for (int i = 0; i < t; i++)
+    {
+        if (ready[i] != 1)
+        {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+void activate()
+{
+    flag = true;
 }
 
 void ecall_put(int tid, int OP, int t)
 {
-    cuckoo->put_some(tid, OP, t);
-}
-void ecall_get(int tid,int OP,int t)
-{
-      cuckoo->get_some(tid,OP,t);
-    
-}	
-void elall_put_one(int tid, int n){
-    std::string s = "random:" + to_string(n);
-    cuckoo->put(s,n,tid);
-}
-void ecall_vector(){
-    vector<int> v(1000*1000);
-    for(int i=0;i<100*1000*1000;i++){
-    	int n=v.at(i%v.size());
+    vector<OptCuckoo::Node *> nodes;
+    for (int i = tid; i < OP; i += t)
+    {
+        std::string s = "random:" + to_string(i);
+        auto node = new OptCuckoo::Node(0, s, i);
+        nodes.push_back(node);
+    }
+    ready[tid] = 1;
+    while (!flag)
+    {
+    }
+    for (int i = 0; i < nodes.size(); i++)
+    {
+        cuckoo->putp(nodes[i], tid);
     }
 }
-void ecall_queue(){
+void ecall_get(int tid, int OP, int t)
+{
+    cuckoo->get_some(tid, OP, t);
+}
+void elall_put_one(int tid, int n)
+{
+    std::string s = "random:" + to_string(n);
+    cuckoo->put(s, n, tid);
+}
+void ecall_vector()
+{
+    vector<int> v(1000 * 1000);
+    for (int i = 0; i < 100 * 1000 * 1000; i++)
+    {
+        int n = v.at(i % v.size());
+    }
+}
+void ecall_queue()
+{
     queue<int> q;
-    for(int i=0;i<100*1000*1000;i++){
+    for (int i = 0; i < 100 * 1000 * 1000; i++)
+    {
         q.push(i);
     }
 }
-class HOGE{
-	public:
-		int n;
-	public:
-		HOGE():n(10){
-		}
+class HOGE
+{
+public:
+    int n;
+
+public:
+    HOGE() : n(10)
+    {
+    }
 };
 
-HOGE* hoge_class;
+HOGE *hoge_class;
 
-void ecall_hoge_init(){
+void ecall_hoge_init()
+{
 }
 
-//allocate for n times
-void ecall_loop(int n){
-  int a=0;
-  for(int i=0;i<n;i++){
-    auto x=new HOGE();
-    delete x;
-  }
+// allocate for n times
+void ecall_loop(int n)
+{
+    int a = 0;
+    for (int i = 0; i < n; i++)
+    {
+        auto x = new HOGE();
+        delete x;
+    }
 }
-

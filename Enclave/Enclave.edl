@@ -68,5 +68,7 @@ enclave {
 	public void ecall_get(int tid,int OP,int t);
 	public void ecall_loop(int n);
 	public void ecall_hoge_init();
+    public int is_fine(int t);
+    public void activate();
     };
 };

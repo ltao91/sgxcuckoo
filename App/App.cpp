@@ -193,101 +193,75 @@ int SGX_CDECL main(int argc, char *argv[])
     ecall_libcxx_functions();
     ecall_thread_functions();
 
-    // const int ops = 16000 * 1000;
-    // int thread_num=128;
-    // for (int t_num =thread_num; t_num < thread_num+1; t_num *= 2)
-    // {
-    //    double ms_sum = 0;
-    //    double ms_best = 1000000000;
-    //    for (int loop = 0; loop < 10; loop++)
-    //    {
-    //      //std::cout << "start constructor" << std::endl;
-    //        //ecall_init(global_eid);
-    //        //std::cout << "start : " << loop << std::endl;
-    //        std::vector<std::thread> threads;
-    //        bool flag = false;
-    //        auto write = [](int tid, int t_num, int ops, sgx_enclave_id_t eid,bool &flag)
-    //        {
-    //            while (!flag)
-    //            {
-    //            }
-    //                //ecall_put(eid,  tid, ops, t_num);
-    // 	    ecall_loop(eid,ops/t_num);
-    // 	    //for(int i=tid;i<ops;i+=t_num)
-    // 	    //	elall_put_one(global_eid,tid,i);
-    //        };
-    //     auto test=[](int t_num,int ops, sgx_enclave_id_t eid,bool &flag){
-    // 	while(!flag)
-    // 	{
-    // 	}
-    // 	ecall_loop(eid,ops/t_num);
-    //     };
-    //      auto read = [](int tid, int t_num, int ops, sgx_enclave_id_t eid,bool &flag)
-    //        {
-    //            while (!flag)
-    //            {
-    //            }
-    //                ecall_get(eid,  tid, ops, t_num);
-    //                //ecall_loop(eid,ops*10/t_num);
-    //         };
-
-    //         for (int i = 0; i < t_num; i++)
-    //         {
-    // 	    threads.emplace_back(test,t_num,ops,global_eid,std::ref(flag));
-    //             //threads.emplace_back(write, i, t_num, ops, global_eid,std::ref(flag));
-    //         }
-    //     //	for (int i = 0; i < t_num; i++)
-    //         //  {
-    //         //    threads.emplace_back(read, i, t_num, ops, global_eid,std::ref(flag));
-    //         //}
-    //     ecall_hoge_init(global_eid);
-    //         auto s = get_now();
-    //         flag = true;
-    //         for (int i = 0; i < t_num; i++)
-    //         {
-    //             threads[i].join();
-    //         }
-    //         auto e = get_now();
-    //         ms_sum += get_duration_ms(s, e) / 1000000;
-    //         ms_best = std::min(ms_best, get_duration_ms(s, e) / 1000000);
-    //     }
-    //     //std::cout << ms_sum / 10 << std::endl;
-    //     std::cout << ms_best << std::endl;
-    // int res=0;
-    // //std::cout<<res<<std::endl;
-    // }
-
-    int ops = 16000 * 1000;
-    bool flag;
-    auto f = [](sgx_enclave_id_t eid, int n,bool &flag)
+    const int ops = 16000 * 1000;
+    int thread_num = 128;
+    for (int t_num = thread_num; t_num < thread_num + 1; t_num *= 2)
     {
-        while(!flag){
-
-        }
-        ecall_loop(eid, n);
-    };
-    for (int t = 8; t < 300; t *= 2)
-    {
-        double best=10000000;
+        double ms_sum = 0;
+        double ms_best = 1000000000;
         for (int loop = 0; loop < 10; loop++)
         {
-            std::cout<<"start : "<<loop<<std::endl;
-            flag=false;
+            std::cout << "start constructor" << std::endl;
+            ecall_init(global_eid);
             std::vector<std::thread> threads;
-            for(int i=0;i<t;i++){
-                threads.emplace_back(f,global_eid,ops/t,std::ref(flag));
+            bool flag = false;
+            auto write = [](int tid, int t_num, int ops, sgx_enclave_id_t eid, bool &flag)
+            {
+                ecall_put(eid, tid, ops, t_num);
+            };
+
+            for (int i = 0; i < t_num; i++)
+            {
+                threads.emplace_back(write, i, t_num, ops, global_eid, std::ref(flag));
             }
-            auto s=get_now();
-            flag=true;
-            for(int i=0;i<t;i++){
+            int res = 0;
+            do
+            {
+                is_fine(global_eid, &res, t_num);
+            } while (res==0);
+            auto s = get_now();
+            activate(global_eid);
+            for (int i = 0; i < t_num; i++)
+            {
                 threads[i].join();
             }
-            auto e=get_now();
-	    std::cout<<get_duration_ms(s,e)<<std::endl;;
-            best=std::min(best,get_duration_ms(s,e));
+            auto e = get_now();
+            ms_best = std::min(ms_best, get_duration_ms(s, e));
         }
-        std::cout<<"best:"<<best<<std::endl;
+        std::cout << ms_best << std::endl;
     }
+
+    // int ops = 16000 * 1000;
+    // bool flag;
+    // auto f = [](sgx_enclave_id_t eid, int n,bool &flag)
+    // {
+    //     while(!flag){
+
+    //     }
+    //     ecall_loop(eid, n);
+    // };
+    // for (int t = 8; t < 300; t *= 2)
+    // {
+    //     double best=10000000;
+    //     for (int loop = 0; loop < 10; loop++)
+    //     {
+    //         std::cout<<"start : "<<loop<<std::endl;
+    //         flag=false;
+    //         std::vector<std::thread> threads;
+    //         for(int i=0;i<t;i++){
+    //             threads.emplace_back(f,global_eid,ops/t,std::ref(flag));
+    //         }
+    //         auto s=get_now();
+    //         flag=true;
+    //         for(int i=0;i<t;i++){
+    //             threads[i].join();
+    //         }
+    //         auto e=get_now();
+    //     std::cout<<get_duration_ms(s,e)<<std::endl;;
+    //         best=std::min(best,get_duration_ms(s,e));
+    //     }
+    //     std::cout<<"best:"<<best<<std::endl;
+    // }
 
     /* Destroy the enclave */
     sgx_destroy_enclave(global_eid);

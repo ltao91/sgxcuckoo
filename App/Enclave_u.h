@@ -93,6 +93,8 @@ sgx_status_t ecall_queue(sgx_enclave_id_t eid);
 sgx_status_t ecall_get(sgx_enclave_id_t eid, int tid, int OP, int t);
 sgx_status_t ecall_loop(sgx_enclave_id_t eid, int n);
 sgx_status_t ecall_hoge_init(sgx_enclave_id_t eid);
+sgx_status_t is_fine(sgx_enclave_id_t eid, int* retval, int t);
+sgx_status_t activate(sgx_enclave_id_t eid);
 sgx_status_t ecall_type_char(sgx_enclave_id_t eid, char val);
 sgx_status_t ecall_type_int(sgx_enclave_id_t eid, int val);
 sgx_status_t ecall_type_float(sgx_enclave_id_t eid, float val);
